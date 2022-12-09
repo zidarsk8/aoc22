@@ -1,8 +1,6 @@
 import util
 
-
 cals = util.read_data(1)
-
 
 
 single_line = " ".join(cals.splitlines())

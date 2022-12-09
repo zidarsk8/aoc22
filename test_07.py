@@ -22,6 +22,7 @@ def get_structure(lines):
 
     return struc
 
+
 def test_structure_basic():
     assert get_structure([""]) == {}
     assert get_structure([]) == {}
@@ -32,33 +33,26 @@ def test_structure_root():
 
 
 def test_structure_ls_empty():
-    lines = ["$ cd /",
-             "$ ls"]
+    lines = ["$ cd /", "$ ls"]
     assert get_structure(lines) == {"/": {}}
 
+
 def test_structure_ls_file():
-    lines = [
-        "$ cd /",
-         "$ ls",
-         "3 file1.txt"
-    ]
-    assert get_structure(lines) == {"/": {"file1.txt":3}}
+    lines = ["$ cd /", "$ ls", "3 file1.txt"]
+    assert get_structure(lines) == {"/": {"file1.txt": 3}}
+
 
 def test_structure_ls_dir():
-    lines = [
-        "$ cd /",
-         "$ ls",
-         "dir b"
-    ]
-    assert get_structure(lines) == {"/": {"b":{}}}
+    lines = ["$ cd /", "$ ls", "dir b"]
+    assert get_structure(lines) == {"/": {"b": {}}}
+
 
 def test_structure_ls_dir_file():
     lines = [
         "$ cd /",
-         "$ ls",
-         "dir b",
-         "5 a.txt",
-         "dir c",
+        "$ ls",
+        "dir b",
+        "5 a.txt",
+        "dir c",
     ]
-    assert get_structure(lines) == {"/": {"a.txt": 5, "c":{},"b":{}}}
-
+    assert get_structure(lines) == {"/": {"a.txt": 5, "c": {}, "b": {}}}

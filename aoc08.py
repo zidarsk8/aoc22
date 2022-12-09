@@ -1,6 +1,6 @@
-import util
 from icecream import ic
 
+import util
 
 text = """30373
 25512

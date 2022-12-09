@@ -1,8 +1,6 @@
-import util
 from icecream import ic
 
-
-
+import util
 
 text = """$ cd /
 $ ls
@@ -50,7 +48,7 @@ while lines:
         current_loc = current_loc + (line.split()[2],)
     else:
         structure[current_loc][line.split()[1]] = line.split()[0]
-    
+
 
 sizes = [ic(sum(map(int, files.values()))) for d, files in structure.items()]
 ic(structure)
@@ -58,11 +56,11 @@ print(sum(size for size in sizes if size < 100000))
 
 # sizes
 for k in sorted(structure.keys(), reverse=True):
-    files = [v for k, v in structure[k].items() if k != "_" ]
+    files = [v for k, v in structure[k].items() if k != "_"]
     file_sizes = sum(map(int, structure[k].values()))
     structure[k]["_"] = file_sizes
     if k[:-1]:
-        structure[k[:-1]]["_"] =  structure[k[:-1]].get("_", 0) + file_sizes
+        structure[k[:-1]]["_"] = structure[k[:-1]].get("_", 0) + file_sizes
 
 small_dirs = sum(v["_"] for v in structure.values() if v["_"] < 100000)
 
@@ -77,4 +75,3 @@ ic(missing_space)
 
 all_dir_sizes = sorted([v["_"] for v in structure.values() if v["_"] > missing_space])
 ic(all_dir_sizes)
-

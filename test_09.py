@@ -5,6 +5,25 @@ import util
 FULL_TEXT = util.read_data(9)
 
 
+short_example = """R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2"""
+
+long_example = """R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20"""
+
+
 def get_code(text):
     return int(text)
 
@@ -147,23 +166,6 @@ def walk_head(steps):
 )
 def test_walk_head(moves, result):
     assert draw_grid(walk_head(moves)) == result
-
-
-def move_tail(t_pos, h_pos):
-    if abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 2:
-        t_pos = (
-            t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]),
-            t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]),
-        )
-    elif abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 1:
-        t_pos = (t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]), h_pos[1])
-    elif abs(t_pos[0] - h_pos[0]) == 1 and abs(t_pos[1] - h_pos[1]) == 2:
-        t_pos = (h_pos[0], t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]))
-    elif abs(t_pos[0] - h_pos[0]) > 1:
-        t_pos = (t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]), t_pos[1])
-    elif abs(t_pos[1] - h_pos[1]) > 1:
-        t_pos = (t_pos[0], t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]))
-    return t_pos
 
 
 @pytest.mark.parametrize(
@@ -315,34 +317,15 @@ def part_1(input_text):
     return len(tail_grid)
 
 
-example = """R 4
-U 4
-L 3
-D 1
-R 4
-D 1
-L 5
-R 2"""
-
-
 @pytest.mark.parametrize(
     "input_text,result",
     [
-        (example, 13),
+        (short_example, 13),
         # (FULL_TEXT, 5878),
     ],
 )
 def test_part_(input_text, result):
     assert part_1(input_text) == result
-
-
-def move_long_tail(long_tail, h_pos):
-    all_pos = [h_pos] + long_tail
-
-    for i in range(len(long_tail)):
-
-        all_pos[i + 1] = long_tail[i] = move_tail(long_tail[i], all_pos[i])
-    return long_tail
 
 
 @pytest.mark.parametrize(
@@ -549,28 +532,58 @@ def test_walk_long_tail_only(moves, size, result):
     assert draw_grid(walk_tail_multi(moves, size, True)) == result
 
 
-def part_2(input_text):
+def move_tail(t_pos, h_pos):
+    if abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 2:
+        t_pos = (
+            t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]),
+            t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]),
+        )
+    elif abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 1:
+        t_pos = (t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]), h_pos[1])
+    elif abs(t_pos[0] - h_pos[0]) == 1 and abs(t_pos[1] - h_pos[1]) == 2:
+        t_pos = (h_pos[0], t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]))
+    elif abs(t_pos[0] - h_pos[0]) > 1:
+        t_pos = (t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]), t_pos[1])
+    elif abs(t_pos[1] - h_pos[1]) > 1:
+        t_pos = (t_pos[0], t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]))
+    return t_pos
+
+
+def move_long_tail(long_tail, h_pos):
+    all_pos = [h_pos] + long_tail
+    for i in range(len(long_tail)):
+        all_pos[i + 1] = long_tail[i] = move_tail(long_tail[i], all_pos[i])
+    return long_tail
+
+
+def walk_tail_multi_clean(steps, size):
+    h_pos = (0, 0)
+    long_tail = [(0, 0)] * size
+    grid = {h_pos: "#"}
+
+    for direction, count in steps:
+        for _ in range(count):
+            h_pos = (h_pos[0] + move[direction][0], h_pos[1] + move[direction][1])
+            long_tail = move_long_tail(long_tail, h_pos)
+            grid[long_tail[-1]] = "#"
+    return grid
+
+
+def part_2(input_text, rope_size):
     moves = [[m.split()[0], int(m.split()[1])] for m in input_text.splitlines()]
-    tail_grid = walk_tail_multi(moves, 9, True)
+    tail_grid = walk_tail_multi_clean(moves, rope_size)
     return len(tail_grid)
 
 
-long_example = """R 5
-U 8
-L 8
-D 3
-R 17
-D 10
-L 25
-U 20"""
-
-
 @pytest.mark.parametrize(
-    "input_text,result",
+    "input_text, rope_size,result",
     [
-        (long_example, 36),
-        (FULL_TEXT, 2405),
+        (short_example, 1, 13),
+        (FULL_TEXT, 1, 5878),  # results from part 1
+        (short_example, 9, 1),
+        (long_example, 9, 36),
+        (FULL_TEXT, 9, 2405),  # results from part 2
     ],
 )
-def test_part_(input_text, result):
-    assert part_2(input_text) == result
+def test_part_2(input_text, rope_size, result):
+    assert part_2(input_text, rope_size) == result

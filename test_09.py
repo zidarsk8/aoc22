@@ -150,7 +150,12 @@ def test_walk_head(moves, result):
 
 
 def move_tail(t_pos, h_pos):
-    if abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 1:
+    if abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 2:
+        t_pos = (
+            t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]),
+            t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]),
+        )
+    elif abs(t_pos[0] - h_pos[0]) == 2 and abs(t_pos[1] - h_pos[1]) == 1:
         t_pos = (t_pos[0] + (h_pos[0] - t_pos[0]) // abs(h_pos[0] - t_pos[0]), h_pos[1])
     elif abs(t_pos[0] - h_pos[0]) == 1 and abs(t_pos[1] - h_pos[1]) == 2:
         t_pos = (h_pos[0], t_pos[1] + (h_pos[1] - t_pos[1]) // abs(h_pos[1] - t_pos[1]))
@@ -179,6 +184,9 @@ def move_tail(t_pos, h_pos):
         ((1, -3), (1, -5), (1, -4)),
         # side
         ((1, 3), (2, 5), (2, 4)),
+        ((4, 1), (5, 2), (4, 1)),
+        ((4, 1), (5, 1), (4, 1)),
+        ((4, 1), (4, 2), (4, 1)),
     ],
 )
 def test_move_tail(t_pos, h_pos, result):
@@ -286,6 +294,15 @@ def walk_tail(steps):
                 "....T",
             ],
         ),
+        (
+            [
+                ("R", 4),
+                ("D", 1),
+            ],
+            [
+                "TTTT",
+            ],
+        ),
     ],
 )
 def test_walk_tail(moves, result):
@@ -312,8 +329,248 @@ R 2"""
     "input_text,result",
     [
         (example, 13),
-        (FULL_TEXT, 5878),
+        # (FULL_TEXT, 5878),
     ],
 )
 def test_part_(input_text, result):
     assert part_1(input_text) == result
+
+
+def move_long_tail(long_tail, h_pos):
+    all_pos = [h_pos] + long_tail
+
+    for i in range(len(long_tail)):
+
+        all_pos[i + 1] = long_tail[i] = move_tail(long_tail[i], all_pos[i])
+    return long_tail
+
+
+@pytest.mark.parametrize(
+    "long_tail,h_pos,result",
+    [
+        # x lateral
+        (
+            [(1, 1), (1, 1), (1, 1)],
+            (2, 1),
+            [(1, 1), (1, 1), (1, 1)],
+        ),
+        (
+            [(1, 1), (1, 1), (1, 1)],
+            (3, 1),
+            [(2, 1), (1, 1), (1, 1)],
+        ),
+        (
+            [(2, 1), (1, 1), (1, 1)],
+            (4, 1),
+            [(3, 1), (2, 1), (1, 1)],
+        ),
+        (
+            [(3, 1), (2, 1), (1, 1)],
+            (5, 1),
+            [(4, 1), (3, 1), (2, 1)],
+        ),
+        (
+            [(4, 1), (3, 1), (2, 1)],
+            (5, 1),
+            [(4, 1), (3, 1), (2, 1)],
+        ),
+        (
+            [(4, 1), (3, 1), (2, 1)],
+            (4, 1),
+            [(4, 1), (3, 1), (2, 1)],
+        ),
+        (
+            [(4, 1), (3, 1), (2, 1)],
+            (4, 2),
+            [(4, 1), (3, 1), (2, 1)],
+        ),
+        (
+            [(4, 1), (3, 1), (2, 1)],
+            (5, 2),
+            [(4, 1), (3, 1), (2, 1)],
+        ),
+    ],
+)
+def test_move_long_tail(long_tail, h_pos, result):
+    assert move_long_tail(long_tail, h_pos) == result
+
+
+def walk_tail_multi(steps, size, tail_only=False):
+    h_pos = (0, 0)
+    long_tail = [(0, 0)] * size
+    if tail_only:
+        grid = {h_pos: "#"}
+    else:
+        grid = {h_pos: "."}
+
+    for direction, count in steps:
+        for _ in range(count):
+            h_pos = (h_pos[0] + move[direction][0], h_pos[1] + move[direction][1])
+            long_tail = move_long_tail(long_tail, h_pos)
+
+            if tail_only:
+                grid[long_tail[-1]] = "#"
+            else:
+                grid[h_pos] = "."
+    if not tail_only:
+        for i, t_pos in list(enumerate(long_tail))[::-1]:
+            grid[t_pos] = str(i + 1)
+        grid[h_pos] = "H"
+    return grid
+
+
+@pytest.mark.parametrize(
+    "moves,size,result",
+    [
+        ([], 3, ["H"]),
+        ([("R", 1)], 3, ["1H"]),
+        ([("R", 2)], 3, ["21H"]),
+        ([("R", 5)], 3, ["..321H"]),
+        (
+            [
+                ("R", 5),
+                ("U", 1),
+            ],
+            3,
+            [
+                ".....H",
+                "..321.",
+            ],
+        ),
+        (
+            [
+                ("R", 5),
+                ("U", 2),
+            ],
+            3,
+            [
+                ".....H",
+                "...321",
+                "......",
+            ],
+        ),
+        (
+            [
+                ("R", 4),
+            ],
+            9,
+            [
+                "4321H",
+            ],
+        ),
+        (
+            [
+                ("R", 4),
+                ("U", 4),
+            ],
+            9,
+            [
+                "....H",
+                "....1",
+                "..432",
+                ".5...",
+                "6....",
+            ],
+        ),
+        (
+            [
+                ("R", 4),
+                ("U", 4),
+                ("L", 3),
+                ("D", 1),
+                ("R", 4),
+                ("D", 1),
+                ("L", 5),
+                ("R", 2),
+            ],
+            7,
+            [
+                "......",
+                "......",
+                ".1H3..",
+                ".5....",
+                "6.....",
+            ],
+        ),
+    ],
+)
+def test_walk_long_tail(moves, size, result):
+    assert draw_grid(walk_tail_multi(moves, size)) == result
+
+
+@pytest.mark.parametrize(
+    "moves,size,result",
+    [
+        ([], 3, ["#"]),
+        (
+            [
+                ("R", 4),
+                ("U", 4),
+                ("L", 3),
+                ("D", 1),
+                ("R", 4),
+                ("D", 1),
+                ("L", 5),
+                ("R", 2),
+            ],
+            9,
+            ["#"],
+        ),
+        (
+            [
+                ("R", 5),
+                ("U", 8),
+                ("L", 8),
+                ("D", 3),
+                ("R", 17),
+                ("D", 10),
+                ("L", 25),
+                ("U", 20),
+            ],
+            9,
+            [
+                "#.....................",
+                "#.............###.....",
+                "#............#...#....",
+                ".#..........#.....#...",
+                "..#..........#.....#..",
+                "...#........#.......#.",
+                "....#......#.........#",
+                ".....#..............#.",
+                "......#............#..",
+                ".......#..........#...",
+                "........#........#....",
+                ".........########.....",
+            ],
+        ),
+    ],
+)
+def test_walk_long_tail_only(moves, size, result):
+    assert draw_grid(walk_tail_multi(moves, size, True)) == result
+
+
+def part_2(input_text):
+    moves = [[m.split()[0], int(m.split()[1])] for m in input_text.splitlines()]
+    tail_grid = walk_tail_multi(moves, 9, True)
+    return len(tail_grid)
+
+
+long_example = """R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20"""
+
+
+@pytest.mark.parametrize(
+    "input_text,result",
+    [
+        (long_example, 36),
+        (FULL_TEXT, 2405),
+    ],
+)
+def test_part_(input_text, result):
+    assert part_2(input_text) == result

@@ -1,5 +1,6 @@
-import pytest
 from textwrap import dedent
+
+import pytest
 
 import util
 
@@ -23,6 +24,76 @@ Point = tuple[int, int]
 
 def parse_map(input_text: str) -> Grid:
     return [list(line) for line in input_text.splitlines()]
+
+
+def find_position(grid: Grid, char: str) -> set[Point]:
+    return {
+        (x, y) for x, line in enumerate(grid) for y, c in enumerate(line) if c == char
+    }
+
+
+def is_legal_move(grid, pos, new_pos):
+    if (
+        new_pos[0] < 0
+        or new_pos[1] < 0
+        or new_pos[0] >= len(grid)
+        or new_pos[1] >= len(grid[0])
+    ):
+        return False
+    if grid[pos[0]][pos[1]] == "S":
+        return True
+    if grid[new_pos[0]][new_pos[1]] == "E":
+        return grid[pos[0]][pos[1]] == "z"
+    if ord(grid[new_pos[0]][new_pos[1]]) - ord(grid[pos[0]][pos[1]]) > 1:
+        return False
+    return True
+
+
+def get_moves(grid: Grid, pos: Point) -> set[Point]:
+    moves = set()
+    for move in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        new_pos = (pos[0] + move[0], pos[1] + move[1])
+        if is_legal_move(grid, pos, new_pos):
+            moves.add(new_pos)
+    return moves
+
+
+def step(
+    grid: Grid,
+    current_positions: set[Point],
+    visited: set[Point],
+) -> tuple[set[Point], set[Point]]:
+    new_positions = set()
+    for pos in current_positions:
+        for new_pos in get_moves(grid, pos) - visited:
+            new_positions.add(new_pos)
+
+    return new_positions, visited | new_positions
+
+
+def walk(text, start_char, end_char):
+    grid = parse_map(text)
+    start = find_position(grid, start_char)
+    end = find_position(grid, end_char).pop()
+    current_positions = start
+    visited = start
+    steps = 0
+    while end not in visited and current_positions:
+        current_positions, visited = step(grid, current_positions, visited)
+        steps += 1
+    return steps
+
+
+@pytest.mark.parametrize(
+    "text,start_char,end_char,steps",
+    [
+        (short_example, "S", "E", 31),
+        (input_text, "S", "E", 361),  # part 1
+        (input_text, "a", "E", 354),  # part 2
+    ],
+)
+def test_walk(text, start_char, end_char, steps):
+    assert walk(text, start_char, end_char) == steps
 
 
 @pytest.mark.parametrize(
@@ -54,12 +125,6 @@ def parse_map(input_text: str) -> Grid:
 )
 def test_parse_map(text: str, result: Grid):
     assert parse_map(text) == result
-
-
-def find_position(grid: Grid, char: str) -> set[Point]:
-    return {
-        (x, y) for x, line in enumerate(grid) for y, c in enumerate(line) if c == char
-    }
 
 
 @pytest.mark.parametrize(
@@ -115,32 +180,6 @@ def find_position(grid: Grid, char: str) -> set[Point]:
 )
 def test_find_position(grid, char, result):
     assert find_position(grid, char) == result
-
-
-def is_legal_move(grid, pos, new_pos):
-    if (
-        new_pos[0] < 0
-        or new_pos[1] < 0
-        or new_pos[0] >= len(grid)
-        or new_pos[1] >= len(grid[0])
-    ):
-        return False
-    if grid[pos[0]][pos[1]] == "S":
-        return True
-    if grid[new_pos[0]][new_pos[1]] == "E":
-        return grid[pos[0]][pos[1]] == "z"
-    if ord(grid[new_pos[0]][new_pos[1]]) - ord(grid[pos[0]][pos[1]]) > 1:
-        return False
-    return True
-
-
-def get_moves(grid: Grid, pos: Point) -> set[Point]:
-    moves = set()
-    for move in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        new_pos = (pos[0] + move[0], pos[1] + move[1])
-        if is_legal_move(grid, pos, new_pos):
-            moves.add(new_pos)
-    return moves
 
 
 @pytest.mark.parametrize(
@@ -213,19 +252,6 @@ def test_get_moves(grid, pos, result):
     assert get_moves(grid, pos) == result
 
 
-def step(
-    grid: Grid,
-    current_positions: set[Point],
-    visited: set[Point],
-) -> tuple[set[Point], set[Point]]:
-    new_positions = set()
-    for pos in current_positions:
-        for new_pos in get_moves(grid, pos) - visited:
-            new_positions.add(new_pos)
-
-    return new_positions, visited | new_positions
-
-
 @pytest.mark.parametrize(
     "grid,current_positions,visited,expected_positions,expected_visited",
     [
@@ -284,43 +310,3 @@ def test_step(grid, current_positions, visited, expected_positions, expected_vis
     new_positions, new_visited = step(grid, current_positions, visited)
     assert new_positions == expected_positions
     assert new_visited == expected_visited
-
-
-def walk(text, start_char, end_char):
-    grid = parse_map(text)
-    start = find_position(grid, start_char)
-    end = find_position(grid, end_char).pop()
-    current_positions = start
-    visited = start
-    steps = 0
-    while end not in visited and current_positions:
-        current_positions, visited = step(grid, current_positions, visited)
-        steps += 1
-    return steps
-
-
-@pytest.mark.parametrize(
-    "text,start_char,end_char,steps",
-    [
-        (
-            short_example,
-            "S",
-            "E",
-            31,
-        ),
-        (
-            input_text,  # part 1
-            "S",
-            "E",
-            361,
-        ),
-        (
-            input_text,  # part 2
-            "a",
-            "E",
-            354,
-        ),
-    ],
-)
-def test_walk(text, start_char, end_char, steps):
-    assert walk(text, start_char, end_char) == steps

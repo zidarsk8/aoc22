@@ -1,5 +1,6 @@
-import requests
 import os
+
+import requests
 
 headers = {
     "cookie": os.environ.get("AOC_COOKIE"),

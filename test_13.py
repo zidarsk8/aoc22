@@ -1,5 +1,6 @@
-import pytest
 from textwrap import dedent
+
+import pytest
 
 import util
 
